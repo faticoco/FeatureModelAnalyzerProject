@@ -15,7 +15,7 @@ const ConfigurationStatus = ({ isValid, validationDetails }) => (
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="flex items-center gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200"
+          className="flex items-center gap-3 bg-green-50 text-green-700 px-4 py-3 rounded-lg border border-green-200 lg:w-1/2 text-left"
         >
           <CheckCircle className="w-6 h-6" />
           <span className="font-medium">Valid Configuration</span>
@@ -24,7 +24,7 @@ const ConfigurationStatus = ({ isValid, validationDetails }) => (
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="flex items-center gap-3 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200"
+          className="flex items-center gap-3 bg-red-50 text-red-700 px-4 py-3 rounded-lg border border-red-200 lg:w-1/2 text-left"
         >
           <XCircle className="w-6 h-6" />
           <span className="font-medium">Invalid Configuration</span>
@@ -41,7 +41,7 @@ const ConfigurationStatus = ({ isValid, validationDetails }) => (
           exit={{ opacity: 0, y: -10 }}
           className="space-y-3"
         >
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">
+          <h3 className="text-sm font-semibold text-start text-gray-700 mb-2">
             Configuration Issues:
           </h3>
           {validationDetails.map((detail, index) => (
@@ -50,7 +50,7 @@ const ConfigurationStatus = ({ isValid, validationDetails }) => (
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-start gap-2 bg-red-50 p-3 rounded-lg border border-red-200"
+              className="flex items-start gap-2 bg-red-50 p-3 rounded-lg border border-red-200 lg:w-1/2 text-left"
             >
               <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
@@ -79,7 +79,7 @@ const ConfigurationStatus = ({ isValid, validationDetails }) => (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200"
+            className="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200 lg:w-1/2 text-left"
           >
             <h4 className="text-sm font-semibold text-blue-700 mb-2">
               Configuration Rules:

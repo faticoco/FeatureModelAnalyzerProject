@@ -116,7 +116,7 @@ const FeatureModelVisualizer = () => {
   };
 
   // Error Display Component
-  const ErrorDisplay = () => {
+  const ErrorDisplay = ({error}) => {
     if (!error) return null;
     
     return (
