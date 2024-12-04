@@ -62,18 +62,20 @@ const Dashboard = ({
                   Feature Tree
                 </h2>
                 {featureModel && (
-                  <FeatureTree 
-                    featureName={Object.keys(featureModel)[0]}
-                    featureModel={featureModel}
-                    selectedFeatures={selectedFeatures}
-                    handleFeatureSelect={handleFeatureSelect}
-                    isFeatureDisabled={isFeatureDisabled}
-                  />
+                 <>
+                   <FeatureTree 
+                     featureName={Object.keys(featureModel)[0]}
+                     featureModel={featureModel}
+                     selectedFeatures={selectedFeatures}
+                     handleFeatureSelect={handleFeatureSelect}
+                     isFeatureDisabled={isFeatureDisabled}
+                   />
+                   <ConfigurationStatus isValid={isValid} validationDetails={validationDetails} />
+                 </>
                 )}
               </div>
             )}
-            {selectedTab === "config" && 
-              <ConfigurationStatus isValid={isValid} validationDetails={validationDetails} />}
+            
             {selectedTab === "visual" && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
