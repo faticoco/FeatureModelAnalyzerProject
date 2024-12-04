@@ -27,7 +27,6 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => (
         <SidebarItem icon={Layout} label="Overview" id="overview" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         <SidebarItem icon={Binary} label="Logic View" id="logic" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         <SidebarItem icon={GitBranch} label="Feature Tree" id="tree" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-        <SidebarItem icon={Settings} label="Configuration" id="config" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         <SidebarItem icon={Workflow} label="Visual Model" id="visual" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
       </nav>
     </div>
