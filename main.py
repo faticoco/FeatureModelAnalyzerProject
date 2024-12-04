@@ -472,8 +472,10 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "feature_model": parsed_model.feature_model,
             "constraints": parsed_model.constraints,
-            "mwp": mwp
+            "mwp": mwp,
+            "wp": wp
         }
+        
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
