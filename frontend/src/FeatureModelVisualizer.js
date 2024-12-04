@@ -44,7 +44,7 @@ const FeatureModelVisualizer = () => {
       setFeatureModel(data.feature_model);
       setMwp(data.mwp);
       // Initialize selectedFeatures with MWP instead of empty set
-      setSelectedFeatures(new Set(data.mwp));
+      setSelectedFeatures(new Set(data.mwp[0]));
       setError(null);
       setValidationDetails([]);
       setIsValid(true);

@@ -1,3 +1,5 @@
+import re
+import socket
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,7 +10,7 @@ import uvicorn
 from collections import deque
 from pysat.solvers import Solver
 from itertools import combinations
-
+from sympy import Symbol, to_cnf
 app = FastAPI()
 
 app.add_middleware(
@@ -65,22 +67,35 @@ class ModelStorage:
 
 model_storage = ModelStorage()
 
-def parse_boolean_expression(expr: str) -> List[List[int]]:
-    """Convert boolean expression to CNF clauses"""
-    # Basic implementation for common operators
-    if '->' in expr:
-        antecedent, consequent = expr.split('->')
-        antecedent = antecedent.strip()
-        consequent = consequent.strip()
-        return [[-1 if '!' in antecedent else 1, 
-                1 if '!' in consequent else -1]]
-    elif '&' in expr:
-        terms = expr.split('&')
-        return [[1 if '!' not in term else -1] for term in terms]
-    elif '|' in expr:
-        terms = expr.split('|')
-        return [[-1 if '!' in term else 1 for term in terms]]
-    return [[1 if '!' not in expr else -1]]
+
+def parse_boolean_expression(expression, feature_map):
+    """Convert boolean expression to CNF using SymPy"""
+    symbols = {name: Symbol(name) for name in feature_map.keys()}
+    
+    # Convert logical operators to Python/SymPy syntax
+        # Updated regex patterns
+    expr = expression.lower()
+    expr = re.sub(r'\s*->\s*', ' >> ', expr.strip())  # implication with flexible spacing
+    expr = re.sub(r'\b(?:∧|and)\b', '&', expr)         # conjunction 
+    expr = re.sub(r'\b(?:∨|or)\b', '|', expr)          # disjunction
+    expr = re.sub(r'\b(?:¬|not)\b', '~', expr)         # negation
+
+    
+    # Replace feature names with symbol references
+    for name, symbol in symbols.items():
+        expr = re.sub(rf'\b{name.lower()}\b', f'symbols["{name}"]', expr)
+    
+    sympy_expr = eval(expr)
+    cnf_expr = to_cnf(sympy_expr)
+    return cnf_expr
+
+def check_constraint_satisfaction(cnf_expr, selected_features, feature_map):
+    values = {Symbol(f): (f in selected_features) for f in feature_map.keys()}
+    try:
+        return bool(cnf_expr.subs(values))
+    except Exception as e:
+        print(f"Error evaluating constraint: {e}")
+        return False
 
 def validate_configuration(
     selected_features: Set[str],
@@ -132,35 +147,33 @@ def validate_configuration(
     # Check cross-tree constraints
     for constraint in model.constraints:
         if not constraint['is_english']:
-            # Convert boolean expression to clauses and check satisfaction
-            clauses = parse_boolean_expression(constraint['expression'])
-            # Add validation logic here based on the clauses
-            # This is a simplified check - you might want to implement more robust constraint checking
-            if not check_constraint_satisfaction(clauses, selected_features, model.feature_map):
-                validation_errors.append(
-                    f"Cross-tree constraint violated: {constraint['expression']}"
-                )
+            try:
+                cnf_expr = parse_boolean_expression(constraint['expression'], model.feature_map)
+                if not check_constraint_satisfaction(cnf_expr, selected_features, model.feature_map):
+                    validation_errors.append(
+                        f"Cross-tree constraint violated: {constraint['expression']}"
+                    )
+            except Exception as e:
+                validation_errors.append(f"Error processing constraint '{constraint['expression']}': {str(e)}")
     
     if validation_errors:
         return ValidationResult(False, "Invalid configuration", validation_errors)
     
     return ValidationResult(True, "Valid configuration", [])
 
-def check_constraint_satisfaction(clauses: List[List[int]], selected_features: Set[str], feature_map: Dict[str, int]) -> bool:
-    # Simple constraint satisfaction check
-    reverse_map = {v: k for k, v in feature_map.items()}
-    
-    for clause in clauses:
-        clause_satisfied = False
-        for literal in clause:
-            feature_name = reverse_map[abs(literal)]
-            is_selected = feature_name in selected_features
-            if (literal > 0 and is_selected) or (literal < 0 and not is_selected):
-                clause_satisfied = True
-                break
-        if not clause_satisfied:
-            return False
-    return True
+
+def validate_parentheses(expr):
+    stack = []
+    for char in expr:
+        if char == '(':
+            stack.append(char)
+        elif char == ')':
+            if not stack:
+                return False
+            stack.pop()
+    return len(stack) == 0
+
+
 
 def parse_feature_xml(xml_content: str) -> ParsedModel:
     parsed_model = ParsedModel()
@@ -406,6 +419,43 @@ async def get_wp():
         raise HTTPException(status_code=400, detail=str(e))
     
 
+from huggingface_hub import login
+from transformers import pipeline
+from huggingface_hub import InferenceClient
+def setup_hf_auth():
+   login('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')
+
+def query_llama_api(prompt):
+    """
+    Sends a prompt to LLaMA via Hugging Face API and returns the response.
+    """
+    try:
+        setup_hf_auth()
+       
+
+        client = InferenceClient(api_key="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")
+
+        messages = [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+
+        completion = client.chat.completions.create(
+            model="meta-llama/Llama-3.2-3B-Instruct", 
+            messages=messages, 
+            max_tokens=500
+        )
+
+       
+        response = completion.choices[0].message.content
+        print(response)
+        return response
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return "Error: An error occurred while making the request."
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -535,6 +585,50 @@ async def verify_configuration(selection: FeatureSelection):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+class EnglishConstraint(BaseModel):
+    constraint: str
 
+@app.post("/convert_constraint")
+@app.post("/convert_constraint")
+async def convert_english_to_boolean(request: dict):
+    try:
+        session_id = "default_session"
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(status_code=400, detail="No feature model uploaded")
+        
+        if 'constraint' not in request:
+            raise HTTPException(status_code=400, detail="Missing 'constraint' in request body")
+            
+        features = get_available_features(parsed_model)
+        prompt = f"""You are a constraint converter for feature models. Convert English constraints to boolean expressions.
+
+Available features: {', '.join(features)}
+
+Rules:
+- Use only the features listed above
+- Use operators: and (∧), or (∨), not (¬), implies (→)
+- Each feature name must match exactly
+- Return only the boolean expression, no explanations
+
+Example conversions:
+"If DatabaseSystem is selected, then MySQL must be selected" → "DatabaseSystem → MySQL"
+"Either PostgreSQL or MongoDB must be selected" → "PostgreSQL ∨ MongoDB"
+"Cannot select both Linux and Windows" → "¬(Linux ∧ Windows)"
+
+Convert this constraint: {request['constraint']}"""
+
+        print(prompt)
+        response = query_llama_api(prompt)
+        print(response)
+        # valid_tokens = set(features + ['∧', '∨', '¬', '→', '(', ')', ' '])
+        # if not all(token in valid_tokens for token in response.split()):
+        #     raise HTTPException(status_code=400, detail="Invalid boolean expression generated")
+            
+        return {"boolean_expression": response}
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000)
