@@ -12,7 +12,8 @@ const FeatureModelVisualizer = () => {
   // State Management
   const [featureModel, setFeatureModel] = useState(null);
   const [selectedFeatures, setSelectedFeatures] = useState(new Set());
-  const [mwp, setMwp] = useState(null);
+  const [mwp, setMwp] = useState([]);
+  const [wp, setWp] = useState([]);
   const [error, setError] = useState(null);
   const [validationDetails, setValidationDetails] = useState([]);
   const [isValid, setIsValid] = useState(true);
@@ -43,6 +44,8 @@ const FeatureModelVisualizer = () => {
       const data = await response.json();
       setFeatureModel(data.feature_model);
       setMwp(data.mwp);
+      setWp(data.wp);
+      console.log(data.wp);
       // Initialize selectedFeatures with MWP instead of empty set
       setSelectedFeatures(new Set(data.mwp));
       setError(null);
@@ -177,6 +180,7 @@ const FeatureModelVisualizer = () => {
             handleFileUpload={handleFileUpload}
             featureModel={featureModel}
             mwp={mwp}
+            wp={wp}
             selectedFeatures={selectedFeatures}
             handleFeatureSelect={handleFeatureSelect}
             isFeatureDisabled={isFeatureDisabled}

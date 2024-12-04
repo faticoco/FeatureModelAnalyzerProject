@@ -14,6 +14,7 @@ const Dashboard = ({
   handleFileUpload, 
   featureModel,
   mwp,
+  wp,
   selectedFeatures,
   handleFeatureSelect,
   isFeatureDisabled,
@@ -52,7 +53,7 @@ const Dashboard = ({
             className="space-y-6"
           >
             {selectedTab === "overview" && 
-              <StatsOverview featureModel={featureModel} mwp={mwp} />}
+              <StatsOverview featureModel={featureModel} mwp={mwp} wp={wp} />}
             {selectedTab === "logic" && 
               <PropositionalLogicView featureModel={featureModel} />}
             {selectedTab === "tree" && (
