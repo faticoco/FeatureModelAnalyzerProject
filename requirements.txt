@@ -3,3 +3,5 @@ pydantic
 python-multipart
 uvicorn
 python-sat
+sympy
+transformers
