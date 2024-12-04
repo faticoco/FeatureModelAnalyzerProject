@@ -6,7 +6,8 @@ from typing import List, Dict, Set, Tuple, Optional
 import threading
 import uvicorn
 from collections import deque
-from pysat.solvers import Solverfrom itertools import combinations
+from pysat.solvers import Solver
+from itertools import combinations
 
 app = FastAPI()
 
