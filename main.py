@@ -6,7 +6,7 @@ from typing import List, Dict, Set, Tuple, Optional
 import threading
 import uvicorn
 from collections import deque
-
+from itertools import combinations
 
 app = FastAPI()
 
@@ -146,7 +146,6 @@ def validate_configuration(
 
 def check_constraint_satisfaction(clauses: List[List[int]], selected_features: Set[str], feature_map: Dict[str, int]) -> bool:
     # Simple constraint satisfaction check
-    # This is a basic implementation - you might want to make it more robust
     reverse_map = {v: k for k, v in feature_map.items()}
     
     for clause in clauses:
@@ -261,44 +260,129 @@ def translate_to_logic(
     
     return clauses, feature_map, reverse_map
 
-def find_mwp(parsed_model: ParsedModel) -> List[str]:
-    minimum_configuration = []
+def find_mwp(working_products: List[List[str]]) -> List[List[str]]:
+    if not working_products:
+        return []
+        
+    # Find minimum length
+    min_length = min(len(product) for product in working_products)
+    
+    # Return all products with minimum length
+    return [product for product in working_products if len(product) == min_length]
 
-    def find_shortest_path(feature: str) -> List[str]:
-        queue = deque([[feature]])
-        visited = set()
 
-        while queue:
-            path = queue.popleft()
-            current = path[-1]
-            if current in visited:
+def find_wp(parsed_model: ParsedModel) -> List[List[str]]:
+    working_products = []
+    
+    def get_mandatory_features() -> Set[str]:
+        mandatory = set()
+        for feature, props in parsed_model.feature_model.items():
+            if props.get('mandatory', False):
+                mandatory.add(feature)
+                # Add all mandatory parents
+                current = feature
+                while current in parsed_model.feature_model:
+                    parent = next((f for f, p in parsed_model.feature_model.items() 
+                                 if current in p.get('children', [])), None)
+                    if parent:
+                        mandatory.add(parent)
+                        current = parent
+                    else:
+                        break
+        return mandatory
+
+    def get_optional_features(mandatory: Set[str]) -> List[str]:
+        return [f for f in parsed_model.feature_model.keys() 
+                if f not in mandatory]
+
+    def handle_group_constraints(feature_set: Set[str]) -> bool:
+        for feature, props in parsed_model.feature_model.items():
+            if feature not in feature_set:
                 continue
-            visited.add(current)
-            props = parsed_model.feature_model.get(current, {})
             children = props.get('children', [])
             if not children:
-                return path  # Reached a leaf node
-            for child in children:
-                queue.append(path + [child])
-        return path  # In case no leaf is found
+                continue
+            
+            selected_children = [c for c in children if c in feature_set]
+            
+            if props.get('relation') == 'XOR' and len(selected_children) > 1:
+                return False
+            if props.get('relation') == 'OR' and selected_children and not any(c in feature_set for c in children):
+                return False
+        return True
 
-    for feature, props in parsed_model.feature_model.items():
-        if props['mandatory']:
-            shortest_path = find_shortest_path(feature)
-            minimum_configuration.extend(shortest_path)
+    # Start with mandatory features
+    mandatory_features = get_mandatory_features()
+    optional_features = get_optional_features(mandatory_features)
+    base_config = list(mandatory_features)
 
-    # Remove duplicates while preserving order
-    seen = set()
-    minimum_configuration = [x for x in minimum_configuration if not (x in seen or seen.add(x))]
+    # Validate base configuration
+    if validate_configuration(set(base_config), parsed_model).valid:
+        working_products.append(base_config)
 
-    return minimum_configuration
+    # Try adding optional features incrementally
+    for r in range(1, len(optional_features) + 1):
+        for opt_combo in combinations(optional_features, r):
+            candidate = base_config + list(opt_combo)
+            if handle_group_constraints(set(candidate)):
+                if validate_configuration(set(candidate), parsed_model).valid:
+                    working_products.append(candidate)
+
+    return working_products    
+    
+@app.get("/mwp")
+async def get_mwp():
+    try:
+        session_id = "default_session"  # In production, get this from request
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(
+                status_code=400, 
+                detail="No feature model uploaded. Please upload a model first."
+            )
+        
+        wp = find_wp(parsed_model)
+        mwp = find_mwp(wp)
+        
+        return {
+            "working_products": wp,
+            "mwp": mwp
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/wp")
+async def get_wp():
+    try:
+        session_id = "default_session"  # In production, get this from request
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(
+                status_code=400, 
+                detail="No feature model uploaded. Please upload a model first."
+            )
+        
+        wp = find_wp(parsed_model)
+        mwp = find_mwp(wp)
+        
+        return {
+            "working_products": wp,
+            "mwp": mwp
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
         content = await file.read()
         parsed_model = parse_feature_xml(content.decode())
-        mwp = find_mwp(parsed_model)
+        # wp = find_wp(parsed_model)
+        # mwp = find_mwp(wp)
+        # print("MWP: ", mwp)
         
         # Store the model with a session ID
         session_id = "default_session"  # In production, generate unique session IDs
@@ -307,7 +391,7 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "feature_model": parsed_model.feature_model,
             "constraints": parsed_model.constraints,
-            "mwp": mwp
+            # "mwp": mwp
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
