@@ -3,7 +3,7 @@ import FeatureModelVisualizer from "./FeatureModelVisualizer";
 
 function App() {
   return (
-    <div className="">
+    <div className="App">
       <FeatureModelVisualizer />
     </div>
   );
