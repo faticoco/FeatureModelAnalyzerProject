@@ -4,6 +4,9 @@ from pydantic import BaseModel
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Set, Tuple, Optional
 import threading
+import uvicorn
+from collections import deque
+
 
 app = FastAPI()
 
@@ -259,13 +262,36 @@ def translate_to_logic(
     return clauses, feature_map, reverse_map
 
 def find_mwp(parsed_model: ParsedModel) -> List[str]:
-    # For now, return a minimal valid configuration
-    # You might want to implement a more sophisticated MWP calculation
-    mandatory_features = [
-        feature for feature, props in parsed_model.feature_model.items()
-        if props['mandatory']
-    ]
-    return mandatory_features
+    minimum_configuration = []
+
+    def find_shortest_path(feature: str) -> List[str]:
+        queue = deque([[feature]])
+        visited = set()
+
+        while queue:
+            path = queue.popleft()
+            current = path[-1]
+            if current in visited:
+                continue
+            visited.add(current)
+            props = parsed_model.feature_model.get(current, {})
+            children = props.get('children', [])
+            if not children:
+                return path  # Reached a leaf node
+            for child in children:
+                queue.append(path + [child])
+        return path  # In case no leaf is found
+
+    for feature, props in parsed_model.feature_model.items():
+        if props['mandatory']:
+            shortest_path = find_shortest_path(feature)
+            minimum_configuration.extend(shortest_path)
+
+    # Remove duplicates while preserving order
+    seen = set()
+    minimum_configuration = [x for x in minimum_configuration if not (x in seen or seen.add(x))]
+
+    return minimum_configuration
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -310,5 +336,4 @@ async def verify_configuration(selection: FeatureSelection):
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
