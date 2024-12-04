@@ -6,7 +6,7 @@ from typing import List, Dict, Set, Tuple, Optional
 import threading
 import uvicorn
 from collections import deque
-
+from pysat.solvers import Solver
 
 app = FastAPI()
 
@@ -35,6 +35,7 @@ class ParsedModel:
         self.clauses = []
         self.feature_map = {}
         self.reverse_map = {}
+        self.english_statements = []
 
 class ValidationResult:
     def __init__(self, valid: bool, message: str, details: List[str]):
@@ -212,7 +213,7 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
     parse_feature(root_feature)
     
     # Generate clauses and feature mapping
-    parsed_model.clauses, parsed_model.feature_map, parsed_model.reverse_map = \
+    parsed_model.clauses, parsed_model.feature_map, parsed_model.reverse_map,parsed_model.english_statements = \
         translate_to_logic(parsed_model.feature_model)
     
     return parsed_model
@@ -226,24 +227,30 @@ def translate_to_logic(
     clauses = []
     feature_map = {name: idx + 1 for idx, name in enumerate(feature_model.keys())}
     reverse_map = {idx: name for name, idx in feature_map.items()}
+    english_statements = []
     
     # Root is always true
     root_name = next(iter(feature_model.keys()))
     clauses.append([feature_map[root_name]])
+    english_statements.append(root_name)
     
     for feature_name, feature in feature_model.items():
         feature_id = feature_map[feature_name]
         
         if feature['parent']:
             parent_id = feature_map[feature['parent']]
+
             
             # Mandatory features
             if feature['mandatory']:
                 clauses.append([-parent_id, feature_id])  # parent → child
                 clauses.append([-feature_id, parent_id])  # child → parent
+                english_statements.append(f"{feature['parent']} → {feature_name}")
+                english_statements.append(f"{feature_name} → {feature['parent']}")
             # Optional features
             else:
                 clauses.append([-feature_id, parent_id])  # child → parent
+                english_statements.append(f"{feature_name} → {feature['parent']}")
             
             # XOR groups
             if feature['group_type'] == 'xor' and feature['children']:
@@ -251,57 +258,69 @@ def translate_to_logic(
                 
                 # At least one
                 clauses.append(children_ids)
+                children_names = [f"{child}" for child in feature['children']]
+                english_statements.append(f"{feature_name} → ({' ∨ '.join(children_names)})")
                 
                 # At most one
+                statment = f"{feature_name} → ( "
+                
+                #now loop over children and do like this(child1 and not child2) or (not child1 and child2)
+                for i in range(len(children_names)):
+                    not_statment = f""
+                    for j in range(len(children_names)):
+                        if i != j:
+                            if j == len(children_names) - 1 or (j == len(children_names) - 2 and j+1==i):
+                                not_statment += f"¬{children_names[j]}"
+                            else:
+                                not_statment += f"¬{children_names[j]} ^ "
+                    if i == len(children_names) - 1:
+                        statment += f"({children_names[i]} ^ {not_statment})"
+                    else:
+                        statment += f"({children_names[i]} ^ {not_statment}) v "
+                english_statements.append(statment)            
+
                 for i in range(len(children_ids)):
                     for j in range(i + 1, len(children_ids)):
                         clauses.append([-children_ids[i], -children_ids[j]])
-            
+                    
             # OR groups
-            elif feature['group_type'] == 'or' and feature['children']:
+            elif feature['group_type'] == 'v' and feature['children']:
                 children_ids = [feature_map[child] for child in feature['children']]
                 clauses.append(children_ids)  # At least one
+                
     
-    return clauses, feature_map, reverse_map
+    return clauses, feature_map, reverse_map,english_statements
 
-def find_mwp(parsed_model: ParsedModel) -> List[str]:
-    minimum_configuration = []
-
-    def find_shortest_path(feature: str) -> List[str]:
-        queue = deque([[feature]])
-        visited = set()
-
-        while queue:
-            path = queue.popleft()
-            current = path[-1]
-            if current in visited:
-                continue
-            visited.add(current)
-            props = parsed_model.feature_model.get(current, {})
-            children = props.get('children', [])
-            if not children:
-                return path  # Reached a leaf node
-            for child in children:
-                queue.append(path + [child])
-        return path  # In case no leaf is found
-
-    for feature, props in parsed_model.feature_model.items():
-        if props['mandatory']:
-            shortest_path = find_shortest_path(feature)
-            minimum_configuration.extend(shortest_path)
-
-    # Remove duplicates while preserving order
-    seen = set()
-    minimum_configuration = [x for x in minimum_configuration if not (x in seen or seen.add(x))]
-
-    return minimum_configuration
-
+def find_all_mwps(parsed_model: ParsedModel) -> List[List[str]]:
+    solver = Solver()
+    for clause in parsed_model.clauses:
+        solver.add_clause(clause)
+    
+    mwps = []
+    min_features = float('inf')
+    
+    while solver.solve():
+        model = solver.get_model()
+        selected_features = [parsed_model.reverse_map[abs(lit)] for lit in model if lit > 0]
+        
+        # Check if the current solution has fewer features than the current minimum
+        if len(selected_features) < min_features:
+            min_features = len(selected_features)
+            mwps = [selected_features]
+        elif len(selected_features) == min_features:
+            mwps.append(selected_features)
+        
+        # Add a clause to block the current solution
+        solver.add_clause([-lit for lit in model])
+    
+    solver.delete()
+    return mwps
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
         content = await file.read()
         parsed_model = parse_feature_xml(content.decode())
-        mwp = find_mwp(parsed_model)
+        mwps = find_all_mwps(parsed_model)
         
         # Store the model with a session ID
         session_id = "default_session"  # In production, generate unique session IDs
@@ -310,12 +329,10 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "feature_model": parsed_model.feature_model,
             "constraints": parsed_model.constraints,
-            "mwp": mwp
+            "mwps": mwps
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-
 
 @app.get("/avaliable_variables")
 async def get_avaliable_variables():
@@ -332,7 +349,77 @@ async def get_avaliable_variables():
         return get_available_features(parsed_model)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+def propositional_logic_to_english(clauses: List[List[int]], reverse_map: Dict[int, str]) -> List[str]:
+    def literal_to_english(literal: int) -> str:
+        feature_name = reverse_map[abs(literal)]
+        if literal > 0:
+            return feature_name
+        else:
+            return f"not {feature_name}"
     
+    english_statements = []
+    for clause in clauses:
+        if len(clause) == 1:
+            # Single literal clause
+            english_statements.append(literal_to_english(clause[0]))
+        else:
+            # Multiple literals in a clause
+            literals = [literal_to_english(lit) for lit in clause]
+            english_statements.append(" or ".join(literals))
+    
+    return english_statements
+
+def to_propositional_logic(model:ParsedModel) -> List[str]:
+        """Convert the feature model to propositional logic formulas."""
+        formulas = []
+        
+        # Add root formula
+        root = next(f for f in model.features.values() if f.parent is None)
+        formulas.append(root.name)  # Root must be selected
+        
+        for feature in model.features.values():
+            if feature.parent:
+                # Mandatory features
+                if feature.mandatory:
+                    formulas.append(f"({feature.parent} → {feature.name})")
+                    formulas.append(f"({feature.name} → {feature.parent})")
+                else:  # Optional features
+                    formulas.append(f"({feature.name} → {feature.parent})")
+                
+            # Handle groups
+            if feature.group_features:
+                group_names = [f.name for f in feature.group_features]
+                
+                if feature.group_type == 'xor':
+                    # At least one must be selected
+                    formulas.append(f"({feature.name} → ({' ∨ '.join(group_names)}))")
+                    # Only one can be selected
+                    for i, name1 in enumerate(group_names):
+                        for name2 in group_names[i+1:]:
+                            formulas.append(f"(¬{name1} ∨ ¬{name2})")
+                            
+                elif feature.group_type == 'or':
+                    # At least one must be selected if parent is selected
+                    formulas.append(f"({feature.name} → ({' ∨ '.join(group_names)}))")
+        
+        return formulas
+
+@app.get("/propositional_logic")
+async def get_propositional_logic():
+    try:
+        session_id = "default_session"  # In production, get this from request
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(
+                status_code=400, 
+                detail="No feature model uploaded. Please upload a model first."
+            )
+        
+        english_statements = parsed_model.english_statements
+        return {"propositional_logic": english_statements}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 @app.post("/verify")
 async def verify_configuration(selection: FeatureSelection):
     try:
