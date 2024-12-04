@@ -411,8 +411,8 @@ async def upload_file(file: UploadFile = File(...)):
     try:
         content = await file.read()
         parsed_model = parse_feature_xml(content.decode())
-        # wp = find_wp(parsed_model)
-        # mwp = find_mwp(wp)
+        wp = find_wp(parsed_model)
+        mwp = find_mwp(wp)
         # print("MWP: ", mwp)
         
         # Store the model with a session ID
@@ -422,7 +422,7 @@ async def upload_file(file: UploadFile = File(...)):
         return {
             "feature_model": parsed_model.feature_model,
             "constraints": parsed_model.constraints,
-            # "mwp": mwp
+            "mwp": mwp
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
