@@ -216,6 +216,9 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
     
     return parsed_model
 
+def get_available_features(parsed_model: ParsedModel) -> List[str]:
+    return list(parsed_model.feature_model.keys())
+
 def translate_to_logic(
     feature_model: Dict
 ) -> Tuple[List[List[int]], Dict[str, int], Dict[int, str]]:
@@ -395,7 +398,25 @@ async def upload_file(file: UploadFile = File(...)):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
 
+
+@app.get("/avaliable_variables")
+async def get_avaliable_variables():
+    try:
+        session_id = "default_session"  # In production, get this from request
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(
+                status_code=400, 
+                detail="No feature model uploaded. Please upload a model first."
+            )
+        
+        return get_available_features(parsed_model)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
 @app.post("/verify")
 async def verify_configuration(selection: FeatureSelection):
     try:
@@ -420,4 +441,4 @@ async def verify_configuration(selection: FeatureSelection):
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)
