@@ -2,7 +2,7 @@
     <feature name="MobilePhone"> <!-- Root feature -->
         <feature name="Camera" mandatory="true"/>
         <feature name="Applications" mandatory="false">
-            <group type="xor">
+            <group type="or">
                 <feature name="Java" mandatory="true">
                 </feature>
                 <feature name="Games" mandatory="true">

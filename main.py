@@ -75,10 +75,11 @@ def parse_boolean_expression(expression, feature_map):
     # Convert logical operators to Python/SymPy syntax
         # Updated regex patterns
     expr = expression.lower()
-    expr = re.sub(r'\s*->\s*', ' >> ', expr.strip())  # implication with flexible spacing
-    expr = re.sub(r'\b(?:∧|and)\b', '&', expr)         # conjunction 
-    expr = re.sub(r'\b(?:∨|or)\b', '|', expr)          # disjunction
-    expr = re.sub(r'\b(?:¬|not)\b', '~', expr)         # negation
+    # Handle all variants of logical operators
+    expr = re.sub(r'\s*->|implies|→\s*', ' >>> ', expr.strip())                     # implication: ->,implies
+    expr = re.sub(r'\b(?:∧|and|&|\^)\b', '&', expr, flags=re.I)          # conjunction: ∧, and, &, ^
+    expr = re.sub(r'\b(?:∨|or|\||v)\b', '|', expr, flags=re.I)           # disjunction: ∨, or, |, v
+    expr = re.sub(r'\b(?:¬|not|~)\b', '~', expr, flags=re.I)             # negation: ¬, not, ~
 
     
     # Replace feature names with symbol references
@@ -430,28 +431,37 @@ def query_llama_api(prompt):
     Sends a prompt to LLaMA via Hugging Face API and returns the response.
     """
     try:
-        setup_hf_auth()
+        # setup_hf_auth()
        
 
-        client = InferenceClient(api_key="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")
+        # client = InferenceClient(api_key="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")
 
-        messages = [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        # messages = [
+        #     {
+        #         "role": "user",
+        #         "content": prompt
+        #     }
+        # ]
 
-        completion = client.chat.completions.create(
-            model="meta-llama/Llama-3.2-3B-Instruct", 
-            messages=messages, 
-            max_tokens=500
-        )
+        # completion = client.chat.completions.create(
+        #     model="meta-llama/Llama-3.2-3B-Instruct", 
+        #     messages=messages, 
+        #     max_tokens=500
+        # )
 
        
-        response = completion.choices[0].message.content
-        print(response)
-        return response
+        # response = completion.choices[0].message.content
+        # print(response)
+        # return response
+        import google.generativeai as genai
+        import os
+
+        genai.configure(api_key="AIzaSyDcZtoloSVo6W0KU5seE12OKIr7mMoK0hc")
+
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+        response = model.generate_content(prompt)
+        print(response.text)
+        return response.text
     
     except Exception as e:
         print(f"Error: {e}")
@@ -610,14 +620,14 @@ Available features: {', '.join(features)}
 
 Rules:
 - Use only the features listed above
-- Use operators: and (∧), or (∨), not (¬), implies (→)
+- Use operators: and (&), or (|), not (~), implies (->)
 - Each feature name must match exactly
 - Return only the boolean expression, no explanations
 
 Example conversions:
-"If DatabaseSystem is selected, then MySQL must be selected" → "DatabaseSystem → MySQL"
-"Either PostgreSQL or MongoDB must be selected" → "PostgreSQL ∨ MongoDB"
-"Cannot select both Linux and Windows" → "¬(Linux ∧ Windows)"
+"If DatabaseSystem is selected, then MySQL must be selected" -> "DatabaseSystem -> MySQL"
+"Either PostgreSQL or MongoDB must be selected" -> "PostgreSQL | MongoDB"
+"Cannot select both Linux and Windows" -> "~(Linux & Windows)"
 
 Convert this constraint: {request['constraint']}"""
 
