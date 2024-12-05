@@ -80,7 +80,7 @@ def parse_boolean_expression(expression, feature_map):
         # Updated regex patterns
     expr = expression.lower()
     # Handle all variants of logical operators
-    expr = re.sub(r'\s*->|implies|→\s*', ' >>> ', expr)                     # implication: ->,implies
+    expr = re.sub(r'\s*->|implies|→\s*', ' >> ', expr)                     # implication: ->,implies
     expr = re.sub(r'\b(?:∧|and|&|\^)\b', '&', expr, flags=re.I)          # conjunction: ∧, and, &, ^
     expr = re.sub(r'\b(?:∨|or|\||v)\b', '|', expr, flags=re.I)           # disjunction: ∨, or, |, v
     expr = re.sub(r'\b(?:¬|not|~)\b', '~', expr, flags=re.I)             # negation: ¬, not, ~
@@ -266,7 +266,7 @@ def translate_to_logic(
     # Root is always true
     root_name = next(iter(feature_model.keys()))
     clauses.append([feature_map[root_name]])
-    english_statements.append(root_name)
+    english_statements.append([f"{root_name}","(Root)" ])
     
     for feature_name, feature in feature_model.items():
         feature_id = feature_map[feature_name]
@@ -279,12 +279,12 @@ def translate_to_logic(
             if feature['mandatory']:
                 clauses.append([-parent_id, feature_id])  # parent → child
                 clauses.append([-feature_id, parent_id])  # child → parent
-                english_statements.append(f"{feature['parent']} → {feature_name}")
-                english_statements.append(f"{feature_name} → {feature['parent']}")
+                english_statements.append([f"{feature['parent']} → {feature_name}", "(Parent To Child Mandatory)"])
+                english_statements.append([f"{feature_name} → {feature['parent']}", "(Child to Parent constraint)"])
             # Optional features
             else:
                 clauses.append([-feature_id, parent_id])  # child → parent
-                english_statements.append(f"{feature_name} → {feature['parent']}")
+                english_statements.append([f"{feature_name} → {feature['parent']}","(Child to Parent constraint)"])
             
             # XOR groups
             if feature['group_type'] == 'xor' and feature['children']:
@@ -293,7 +293,7 @@ def translate_to_logic(
                 # At least one
                 clauses.append(children_ids)
                 children_names = [f"{child}" for child in feature['children']]
-                english_statements.append(f"{feature_name} → ({' ∨ '.join(children_names)})")
+                #english_statements.append(f"{feature_name} → ({' ∨ '.join(children_names)}) (Atleast One constraint in XOR)")
                 
                 # At most one
                 statment = f"{feature_name} → ( "
@@ -311,16 +311,20 @@ def translate_to_logic(
                         statment += f"({children_names[i]} ^ {not_statment})"
                     else:
                         statment += f"({children_names[i]} ^ {not_statment}) v "
-                english_statements.append(statment)            
+                english_statements.append([f"{statment}"," (Atmost One Xor constraint)"])            
 
                 for i in range(len(children_ids)):
                     for j in range(i + 1, len(children_ids)):
                         clauses.append([-children_ids[i], -children_ids[j]])
                     
             # OR groups
-            elif feature['group_type'] == 'v' and feature['children']:
+            elif feature['group_type'] == 'or' and feature['children']:
                 children_ids = [feature_map[child] for child in feature['children']]
                 clauses.append(children_ids)  # At least one
+                children_names = [f"{child}" for child in feature['children']]
+                english_statements.append([f"{feature_name} → ({' ∨ '.join(children_names)})"," (Atleast One constraint in OR)"])
+                
+
                 
     
     return clauses, feature_map, reverse_map,english_statements

@@ -21,6 +21,7 @@ const FeatureModelVisualizer = () => {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [constraints,setConstraints] =useState(null);
 
   // File Upload Handler
   const handleFileUpload = async (event) => {
@@ -46,6 +47,8 @@ const FeatureModelVisualizer = () => {
   
       const data = await response.json();
       setFeatureModel(data.feature_model);
+      console.log(data.constraints)
+      setConstraints(data.constraints)
       setMwp(data.mwp);
       setWp(data.wp);
       console.log(data.wp);
@@ -92,34 +95,69 @@ const FeatureModelVisualizer = () => {
       setIsValid(false);
     }
   };
+const handleFeatureSelect = async (featureName) => {
+  const newSelected = new Set(selectedFeatures);
 
-  // Feature Selection Handler
-  const handleFeatureSelect = async (featureName) => {
-    const newSelected = new Set(selectedFeatures);
-
-    if (newSelected.has(featureName)) {
-      newSelected.delete(featureName);
-      if (featureModel[featureName]?.children) {
-        featureModel[featureName].children.forEach((child) => {
-          newSelected.delete(child);
-        });
-      }
-    } else {
-      newSelected.add(featureName);
-      const parent = featureModel[featureName]?.parent;
-      if (parent && featureModel[parent]?.group_type === "xor") {
-        featureModel[parent].children.forEach((sibling) => {
-          if (sibling !== featureName) newSelected.delete(sibling);
-        });
-      }
-      if (parent && featureModel[parent]?.mandatory) {
-        newSelected.add(parent);
-      }
-    }
-
-    setSelectedFeatures(newSelected);
-    await verifyConfiguration(newSelected);
+  // Helper function for recursive deletion
+  const cascadingDelete = (feature) => {
+    newSelected.delete(feature);
+    // Get all children of the feature
+    const children = featureModel[feature]?.children || [];
+    // Recursively delete all children
+    children.forEach(child => {
+      cascadingDelete(child);
+    });
   };
+
+  if (newSelected.has(featureName)) {
+    // Cascade delete the feature and all its children
+    cascadingDelete(featureName);
+  } else {
+    newSelected.add(featureName);
+    const parent = featureModel[featureName]?.parent;
+    if (parent && featureModel[parent]?.group_type === "xor") {
+      featureModel[parent].children.forEach((sibling) => {
+        if (sibling !== featureName) {
+          cascadingDelete(sibling); // Use cascading delete for siblings too
+        }
+      });
+    }
+    if (parent && featureModel[parent]?.mandatory) {
+      newSelected.add(parent);
+    }
+  }
+
+  setSelectedFeatures(newSelected);
+  await verifyConfiguration(newSelected);
+};
+  // Feature Selection Handler
+  // const handleFeatureSelect = async (featureName) => {
+  //   const newSelected = new Set(selectedFeatures);
+
+  //   if (newSelected.has(featureName)) {
+  //     newSelected.delete(featureName);
+  //     if (featureModel[featureName]?.children) {
+  //       featureModel[featureName].children.forEach((child) => {
+  //         newSelected.delete(child);
+        
+  //       });
+  //     }
+  //   } else {
+  //     newSelected.add(featureName);
+  //     const parent = featureModel[featureName]?.parent;
+  //     if (parent && featureModel[parent]?.group_type === "xor") {
+  //       featureModel[parent].children.forEach((sibling) => {
+  //         if (sibling !== featureName) newSelected.delete(sibling);
+  //       });
+  //     }
+  //     if (parent && featureModel[parent]?.mandatory) {
+  //       newSelected.add(parent);
+  //     }
+  //   }
+
+  //   setSelectedFeatures(newSelected);
+  //   await verifyConfiguration(newSelected);
+  // };
 
   // Feature Disabled Check
   const isFeatureDisabled = (featureName) => {
@@ -201,6 +239,7 @@ const FeatureModelVisualizer = () => {
             error={error}
             uploadedFileName={uploadedFileName}
             setUploadedFileName={setUploadedFileName}
+            constraints={constraints}
           />
         )}
       </AnimatePresence>
