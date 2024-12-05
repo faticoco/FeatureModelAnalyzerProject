@@ -148,34 +148,6 @@ const FeatureModelVisualizer = () => {
     setSelectedFeatures(newSelected);
     await verifyConfiguration(newSelected);
   };
-  // Feature Selection Handler
-  // const handleFeatureSelect = async (featureName) => {
-  //   const newSelected = new Set(selectedFeatures);
-
-  //   if (newSelected.has(featureName)) {
-  //     newSelected.delete(featureName);
-  //     if (featureModel[featureName]?.children) {
-  //       featureModel[featureName].children.forEach((child) => {
-  //         newSelected.delete(child);
-
-  //       });
-  //     }
-  //   } else {
-  //     newSelected.add(featureName);
-  //     const parent = featureModel[featureName]?.parent;
-  //     if (parent && featureModel[parent]?.group_type === "xor") {
-  //       featureModel[parent].children.forEach((sibling) => {
-  //         if (sibling !== featureName) newSelected.delete(sibling);
-  //       });
-  //     }
-  //     if (parent && featureModel[parent]?.mandatory) {
-  //       newSelected.add(parent);
-  //     }
-  //   }
-
-  //   setSelectedFeatures(newSelected);
-  //   await verifyConfiguration(newSelected);
-  // };
 
   // Feature Disabled Check
   const isFeatureDisabled = (featureName) => {
