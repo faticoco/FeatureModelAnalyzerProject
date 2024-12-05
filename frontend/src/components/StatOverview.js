@@ -61,6 +61,16 @@ const StatsOverview = ({ featureModel, mwp, wp }) => (
             </div>
           </div>
         ))}
+
+        {mwp.length === 0 && (
+          <p className="text-gray-600 text-start">No Minimum Working Products found</p>
+        )}
+
+        {!mwp && (
+          <div className="flex items-center h-32">
+            <div className="animate-spin rounded-full text-start h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </motion.div>
     )}
   </div>

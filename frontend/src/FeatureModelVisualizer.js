@@ -50,11 +50,17 @@ const FeatureModelVisualizer = () => {
       setWp(data.wp);
       console.log(data.wp);
       // Initialize selectedFeatures with MWP instead of empty set
+      if (data.mwp.length > 0){
       setSelectedFeatures(new Set(data.mwp[0]));
       setError(null);
       setValidationDetails([]);
       setIsValid(true);
       setShowDashboard(false);
+      } else {
+        showErrorPopup('The file configuration is invalid');
+        // setFeatureModel(null);
+        // setMwp(null);
+      }
   
       // Verify the initial MWP configuration
       // await verifyConfiguration(new Set(data.mwp));
@@ -191,6 +197,7 @@ const FeatureModelVisualizer = () => {
             isValid={isValid}
             validationDetails={validationDetails}
             error={error}
+            uploadedFileName={uploadedFileName}
           />
         )}
       </AnimatePresence>
