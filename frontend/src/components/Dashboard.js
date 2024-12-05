@@ -86,7 +86,6 @@ const Dashboard = ({
                     
                     </div>
                   )
-
                  }
                    <FeatureTree 
                      featureName={Object.keys(featureModel)[0]}

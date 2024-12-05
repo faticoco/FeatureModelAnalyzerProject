@@ -57,7 +57,7 @@ const FeatureModelVisualizer = () => {
       setIsValid(true);
       setShowDashboard(false);
       } else {
-        showErrorPopup('The file configuration is invalid');
+        showErrorPopup('Warning: the logical rules in the file appear to be invalid. No possible product can be made. If you still want to try, click "Extract Feature Model".');
         // setFeatureModel(null);
         // setMwp(null);
       }
