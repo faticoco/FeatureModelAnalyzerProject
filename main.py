@@ -80,7 +80,7 @@ def parse_boolean_expression(expression, feature_map):
         # Updated regex patterns
     expr = expression.lower()
     # Handle all variants of logical operators
-    expr = re.sub(r'\s*->|implies|→\s*', ' >>> ', expr.strip())                     # implication: ->,implies
+    expr = re.sub(r'\s*->|implies|→\s*', ' >>> ', expr)                     # implication: ->,implies
     expr = re.sub(r'\b(?:∧|and|&|\^)\b', '&', expr, flags=re.I)          # conjunction: ∧, and, &, ^
     expr = re.sub(r'\b(?:∨|or|\||v)\b', '|', expr, flags=re.I)           # disjunction: ∨, or, |, v
     expr = re.sub(r'\b(?:¬|not|~)\b', '~', expr, flags=re.I)             # negation: ¬, not, ~
@@ -226,14 +226,14 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
     for constraint in root.findall('.//constraint'):
         bool_expr = constraint.find('booleanExpression')
         print(bool_expr)
-        bool_expr = preprocess_expression(bool_expr.text) if bool_expr is not None else None
+       # bool_expr = preprocess_expression(bool_expr.text) if bool_expr is not None else None
         print(bool_expr)
         eng_stmt = constraint.find('englishStatement')
         
         
         if bool_expr is not None:
             parsed_model.constraints.append({
-                'expression': bool_expr,
+                'expression': bool_expr.text,
                 'is_english': False
             })
         elif eng_stmt is not None:
