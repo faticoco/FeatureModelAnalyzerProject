@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { FileUp, GitBranch, Workflow } from "lucide-react";
+import { FileUp, GitBranch, Workflow, AlertTriangle } from "lucide-react";
 import ConfigurationStatus from "./ConfigurationStatus";
 import FeatureModelFlow from "./FeatureModelFlow";
 import FeatureTree from "./FeatureTree";
@@ -19,6 +19,7 @@ const Dashboard = ({
   isFeatureDisabled,
   isValid,
   validationDetails,
+  uploadedFileName
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
@@ -30,20 +31,24 @@ const Dashboard = ({
           <h1 className="text-2xl font-bold text-gray-800">
             {selectedTab.charAt(0).toUpperCase() + selectedTab.slice(1)}
           </h1>
-          <motion.label
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-all"
-          >
-            <FileUp className="w-4 h-4" />
-            <span>Upload New</span>
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              className="hidden"
-              accept=".xml"
-            />
-          </motion.label>
+          <div className='flex items-center gap-3'>
+            <p>  <span className="font-semibold">Current File:</span>
+               {" "+ uploadedFileName}</p>
+            <motion.label
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-all"
+            >
+              <FileUp className="w-4 h-4" />
+              <span>Upload New</span>
+              <input
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+                accept=".xml"
+              />
+            </motion.label>
+          </div>
         </div>
 
         {/* Content */}
@@ -68,6 +73,21 @@ const Dashboard = ({
                 </h2>
                 {featureModel && (
                  <>
+                 {
+                  mwp.length < 1 && (
+                    <div className="mb-4 p-4 bg-red-50 border flex items-start flex-col gap-3 max-w-max border-red-200 rounded-lg">
+                      <div className="flex items-center space-x-2 ">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                        <h4 className="font-medium text-red-800">Important Note</h4>
+                        </div>
+                        <div>
+                          <p className="text-red-600">This feature model appears to be invalid, so this configuration maker will not work as expected.</p>
+                        </div>
+                    
+                    </div>
+                  )
+
+                 }
                    <FeatureTree 
                      featureName={Object.keys(featureModel)[0]}
                      featureModel={featureModel}
@@ -75,7 +95,7 @@ const Dashboard = ({
                      handleFeatureSelect={handleFeatureSelect}
                      isFeatureDisabled={isFeatureDisabled}
                    />
-                   <ConfigurationStatus isValid={isValid} validationDetails={validationDetails} />
+                   <ConfigurationStatus isValid={ mwp.length < 1? false: isValid} validationDetails={validationDetails} />
                  </>
                 )}
               </div>
