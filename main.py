@@ -566,7 +566,7 @@ async def upload_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.get("/avaliable_variables")
+@app.get("/available_variables")
 async def get_avaliable_variables():
     try:
         session_id = "default_session"  # In production, get this from request

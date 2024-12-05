@@ -12,6 +12,7 @@ const FeatureModelVisualizer = () => {
   // State Management
   const [featureModel, setFeatureModel] = useState(null);
   const [selectedFeatures, setSelectedFeatures] = useState(new Set());
+  const [availableVariables, setAvailableVariables] = useState([])
   const [mwp, setMwp] = useState([]);
   const [wp, setWp] = useState([]);
   const [error, setError] = useState(null);
@@ -21,7 +22,7 @@ const FeatureModelVisualizer = () => {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(null);
-  const [constraints,setConstraints] =useState(null);
+  const [constraints, setConstraints] = useState(null);
 
   // File Upload Handler
   const handleFileUpload = async (event) => {
@@ -30,41 +31,43 @@ const FeatureModelVisualizer = () => {
       showErrorPopup('An unexpected error occurred.');
       return;
     }
-  
+
     setIsLoading(true);
     setUploadedFileName(file.name);
 
     const formData = new FormData();
     formData.append("file", file);
-  
+
     try {
       const response = await fetch("http://localhost:8000/upload", {
         method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) throw new Error("Upload failed");
-  
+
+
       const data = await response.json();
       setFeatureModel(data.feature_model);
-      console.log(data.constraints)
       setConstraints(data.constraints)
       setMwp(data.mwp);
       setWp(data.wp);
       console.log(data.wp);
       // Initialize selectedFeatures with MWP instead of empty set
-      if (data.mwp.length > 0){
-      setSelectedFeatures(new Set(data.mwp[0]));
-      setError(null);
-      setValidationDetails([]);
-      setIsValid(true);
-      setShowDashboard(false);
+      if (data.mwp.length > 0) {
+        setSelectedFeatures(new Set(data.mwp[0]));
+        setError(null);
+        setValidationDetails([]);
+        setIsValid(true);
+        setShowDashboard(false);
+        const availableVar = await getAvailableVariables();
+        setAvailableVariables(availableVar);
       } else {
         showErrorPopup('Warning: the logical rules in the file appear to be invalid. No possible product can be made. If you still want to try, click "Extract Feature Model".');
         // setFeatureModel(null);
         // setMwp(null);
       }
-  
+
       // Verify the initial MWP configuration
       // await verifyConfiguration(new Set(data.mwp));
     } catch (err) {
@@ -95,41 +98,56 @@ const FeatureModelVisualizer = () => {
       setIsValid(false);
     }
   };
-const handleFeatureSelect = async (featureName) => {
-  const newSelected = new Set(selectedFeatures);
 
-  // Helper function for recursive deletion
-  const cascadingDelete = (feature) => {
-    newSelected.delete(feature);
-    // Get all children of the feature
-    const children = featureModel[feature]?.children || [];
-    // Recursively delete all children
-    children.forEach(child => {
-      cascadingDelete(child);
-    });
-  };
-
-  if (newSelected.has(featureName)) {
-    // Cascade delete the feature and all its children
-    cascadingDelete(featureName);
-  } else {
-    newSelected.add(featureName);
-    const parent = featureModel[featureName]?.parent;
-    if (parent && featureModel[parent]?.group_type === "xor") {
-      featureModel[parent].children.forEach((sibling) => {
-        if (sibling !== featureName) {
-          cascadingDelete(sibling); // Use cascading delete for siblings too
-        }
+  const getAvailableVariables = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/available_variables", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
       });
-    }
-    if (parent && featureModel[parent]?.mandatory) {
-      newSelected.add(parent);
+
+      const data = await response.json()
+      return data
+
+    } catch (err) {
+      console.log(err);
     }
   }
+  const handleFeatureSelect = async (featureName) => {
+    const newSelected = new Set(selectedFeatures);
 
-  setSelectedFeatures(newSelected);
-  await verifyConfiguration(newSelected);
-};
+    // Helper function for recursive deletion
+    const cascadingDelete = (feature) => {
+      newSelected.delete(feature);
+      // Get all children of the feature
+      const children = featureModel[feature]?.children || [];
+      // Recursively delete all children
+      children.forEach(child => {
+        cascadingDelete(child);
+      });
+    };
+
+    if (newSelected.has(featureName)) {
+      // Cascade delete the feature and all its children
+      cascadingDelete(featureName);
+    } else {
+      newSelected.add(featureName);
+      const parent = featureModel[featureName]?.parent;
+      if (parent && featureModel[parent]?.group_type === "xor") {
+        featureModel[parent].children.forEach((sibling) => {
+          if (sibling !== featureName) {
+            cascadingDelete(sibling); // Use cascading delete for siblings too
+          }
+        });
+      }
+      if (parent && featureModel[parent]?.mandatory) {
+        newSelected.add(parent);
+      }
+    }
+
+    setSelectedFeatures(newSelected);
+    await verifyConfiguration(newSelected);
+  };
   // Feature Selection Handler
   // const handleFeatureSelect = async (featureName) => {
   //   const newSelected = new Set(selectedFeatures);
@@ -139,7 +157,7 @@ const handleFeatureSelect = async (featureName) => {
   //     if (featureModel[featureName]?.children) {
   //       featureModel[featureName].children.forEach((child) => {
   //         newSelected.delete(child);
-        
+
   //       });
   //     }
   //   } else {
@@ -177,9 +195,9 @@ const handleFeatureSelect = async (featureName) => {
   };
 
   // Error Display Component
-  const ErrorDisplay = ({error}) => {
+  const ErrorDisplay = ({ error }) => {
     if (!error) return null;
-    
+
     return (
       <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
         <div className="flex items-center space-x-2">
@@ -210,7 +228,7 @@ const handleFeatureSelect = async (featureName) => {
   // Main Render
   return (
     <>
-          {ErrorPopupComponent}
+      {ErrorPopupComponent}
 
       <LoadingOverlay />
       <AnimatePresence mode="wait">
@@ -220,17 +238,15 @@ const handleFeatureSelect = async (featureName) => {
             featureModel={featureModel}
             setShowDashboard={setShowDashboard}
             uploadedFileName={uploadedFileName}
-            
+
           />
         ) : (
           <Dashboard
             selectedTab={selectedTab}
             setSelectedTab={setSelectedTab}
-            handleFileUpload={handleFileUpload}
             featureModel={featureModel}
             mwp={mwp}
             wp={wp}
-            setShowDashboard={setShowDashboard}
             selectedFeatures={selectedFeatures}
             handleFeatureSelect={handleFeatureSelect}
             isFeatureDisabled={isFeatureDisabled}
@@ -240,6 +256,7 @@ const handleFeatureSelect = async (featureName) => {
             uploadedFileName={uploadedFileName}
             setUploadedFileName={setUploadedFileName}
             constraints={constraints}
+            availableVariables={availableVariables}
           />
         )}
       </AnimatePresence>

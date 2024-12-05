@@ -11,19 +11,17 @@ import ConstraintsConfigurator from "./ConstraintsConfigurator";
 const Dashboard = ({
   selectedTab,
   setSelectedTab,
-  handleFileUpload,
   featureModel,
   mwp,
   wp,
   selectedFeatures,
-  setShowDashboard,
   handleFeatureSelect,
   isFeatureDisabled,
   isValid,
   validationDetails,
   uploadedFileName, 
-  setUploadedFileName,
-  constraints
+  constraints,
+  availableVariables
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
@@ -117,7 +115,7 @@ const Dashboard = ({
                   Constraints Configurator
                 </h2>
                 
-                  <ConstraintsConfigurator>
+                  <ConstraintsConfigurator constraints={constraints} availableVariables={availableVariables}>
 
                   </ConstraintsConfigurator>
                 
