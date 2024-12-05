@@ -711,7 +711,7 @@ Convert this constraint: {request['constraint']}"""
         # valid_tokens = set(features + ['∧', '∨', '¬', '→', '(', ')', ' '])
         # if not all(token in valid_tokens for token in response.split()):
         #     raise HTTPException(status_code=400, detail="Invalid boolean expression generated")
-            
+        response =response.replace("\n","")
         return {"boolean_expression": response}
         
     except Exception as e:
