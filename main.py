@@ -492,6 +492,7 @@ def query_llm_api(prompt):
 class ConstraintUpdate(BaseModel):
     english_statement: str
     boolean_translation: str
+    
 @app.post("/update_constraint")
 async def update_constraint(update: ConstraintUpdate):
     try:
