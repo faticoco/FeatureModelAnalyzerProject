@@ -9,6 +9,7 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables, setMwp,
     setFeatureModel, }) => {
     const [editedText, setEditedText] = useState("");
     const [loading, setLoading] = useState(false)
+    const [loading2, setLoading2] = useState(false)
 
     const appendToText = (value) => {
         setEditedText(prev => prev + ' ' + value);
@@ -16,7 +17,7 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables, setMwp,
 
     const updateConstraint = async () => {
         try {
-            setLoading(true);
+            setLoading2(true);
             const response = await fetch('http://localhost:8000/update_constraint', {
                 method: 'POST',
                 headers: {
@@ -45,13 +46,11 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables, setMwp,
             onClose();
         } catch (error) {
             console.error('Error updating constraint:', error);
-            // Here you might want to show an error message to the user
         } finally {
-            setLoading(false);
+            setLoading2(false);
         }
     };
 
-    // Example usage in your frontend code
     const convertConstraint = async (constraintText) => {
         try {
 
@@ -177,16 +176,16 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables, setMwp,
                     </button>
                     <button
                         onClick={updateConstraint}
-                        disabled={loading}
+                        disabled={loading2}
                         className={`
         px-4 py-2 rounded-md
-        ${loading
+        ${loading2
                                 ? 'bg-gray-400 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700'}
         text-white
     `}
                     >
-                        {loading ? (
+                        {loading2 ? (
                             <div className="flex items-center gap-2">
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                 Saving...
