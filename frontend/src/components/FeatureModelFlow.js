@@ -1,8 +1,8 @@
+// components/FeatureModelFlow.js
 import { useEffect, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
-  MarkerType,
   Position,
   Handle
 } from "reactflow";
@@ -32,7 +32,7 @@ const FeatureModelFlow = ({ featureModel }) => {
       return getLevel(parent, model, level + 1) + 1;
     }
 
-    // First create all nodes
+    // Create nodes
     levelMap.forEach((featuresInLevel, level) => {
       const levelWidth = featuresInLevel.length * HORIZONTAL_SPACING;
       const startX = -(levelWidth / 2);
@@ -57,48 +57,41 @@ const FeatureModelFlow = ({ featureModel }) => {
       });
     });
 
-    // Then create all edges after nodes are created
+    // Create edges
     flowNodes.forEach((node) => {
       const feature = featureModel[node.id];
-      
+
       if (feature.parent) {
-        // Add parent-child edge
+        // Parent-child edge without arrowhead
         flowEdges.push({
           id: `${feature.parent}-${node.id}`,
           source: feature.parent,
           target: node.id,
           type: "step",
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-          },
-          style: { strokeWidth: 2 }
+          style: { strokeWidth: 2 },
         });
 
-        // Handle group edges
+        // Group edges
         if (feature.group_type) {
-          const siblings = featureModel[feature.parent].children
-            .filter(child => featureModel[child].group_type === feature.group_type);
-          
+          const siblings = featureModel[feature.parent].children.filter(
+            (child) => featureModel[child].group_type === feature.group_type
+          );
+
           const siblingIndex = siblings.indexOf(node.id);
           if (siblingIndex < siblings.length - 1) {
             const nextSibling = siblings[siblingIndex + 1];
-            const currentNodePos = flowNodes.find(n => n.id === node.id)?.position;
-            const nextNodePos = flowNodes.find(n => n.id === nextSibling)?.position;
 
-            if (currentNodePos && nextNodePos && 
-                Math.abs(currentNodePos.x - nextNodePos.x) <= HORIZONTAL_SPACING * 1.5) {
-              flowEdges.push({
-                id: `group-${feature.parent}-${node.id}-${nextSibling}`,
-                source: node.id,
-                target: nextSibling,
-                type: "straight",
-                style: {
-                  stroke: "#000",
-                  strokeWidth: feature.group_type === "xor" ? 2 : 1,
-                  strokeDasharray: feature.group_type === "xor" ? "0" : "5,5",
-                }
-              });
-            }
+            flowEdges.push({
+              id: `group-${feature.parent}-${node.id}-${nextSibling}`,
+              source: node.id,
+              target: nextSibling,
+              type: "straight",
+              style: {
+                stroke: "#000",
+                strokeWidth: feature.group_type === "xor" ? 2 : 1,
+                strokeDasharray: feature.group_type === "xor" ? "0" : "5,5",
+              },
+            });
           }
         }
       }
@@ -116,21 +109,31 @@ const FeatureModelFlow = ({ featureModel }) => {
 
   const FeatureNode = ({ data }) => (
     <div className="relative">
-      <Handle type="target" position={Position.Top} style={{ visibility: 'hidden' }} />
-      <Handle type="source" position={Position.Bottom} style={{ visibility: 'hidden' }} />
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{ visibility: "hidden" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        style={{ visibility: "hidden" }}
+      />
       <div
         className={`
-        px-4 py-2 rounded border-2
-        ${data.mandatory ? "border-blue-600" : "border-gray-400"}
-        bg-white min-w-[120px] text-center
-      `}
+          px-4 py-2 rounded border-2
+          ${data.mandatory ? "border-blue-600" : "border-gray-400"}
+          bg-white min-w-[120px] text-center
+          relative
+        `}
       >
-        <div className="absolute -left-3 top-1/2 transform -translate-y-1/2">
+        {/* Circle at the top */}
+        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <div
             className={`
-            w-4 h-4 rounded-full border-2 border-black
-            ${data.mandatory ? "bg-black" : "bg-white"}
-          `}
+              w-4 h-4 rounded-full border-2 border-black
+              ${data.mandatory ? "bg-black" : "bg-white"}
+            `}
           />
         </div>
         <span>{data.label}</span>
@@ -149,7 +152,9 @@ const FeatureModelFlow = ({ featureModel }) => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow mb-6">
-      <h2 className="text-xl font-semibold mb-4">Feature Model Visualization</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Feature Model Visualization
+      </h2>
       <div style={{ height: 600 }} className="border rounded-lg">
         <ReactFlow
           nodes={nodes}

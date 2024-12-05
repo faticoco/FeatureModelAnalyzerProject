@@ -4,12 +4,16 @@ import { AlertTriangle, CheckCircle, Upload, XCircle } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import LandingScreen from "./components/LandingScreen";
 import Dashboard from "./components/Dashboard";
+import { useErrorPopup } from './utils/errorUtil';
 
 const FeatureModelVisualizer = () => {
+  const { showErrorPopup, ErrorPopupComponent } = useErrorPopup();
+
   // State Management
   const [featureModel, setFeatureModel] = useState(null);
   const [selectedFeatures, setSelectedFeatures] = useState(new Set());
-  const [mwp, setMwp] = useState(null);
+  const [mwp, setMwp] = useState([]);
+  const [wp, setWp] = useState([]);
   const [error, setError] = useState(null);
   const [validationDetails, setValidationDetails] = useState([]);
   const [isValid, setIsValid] = useState(true);
@@ -20,30 +24,40 @@ const FeatureModelVisualizer = () => {
   // File Upload Handler
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
-
+    if (!file) {
+      showErrorPopup('An unexpected error occurred.');
+      return;
+    }
+  
     setIsLoading(true);
     const formData = new FormData();
     formData.append("file", file);
-
+  
     try {
       const response = await fetch("http://localhost:8000/upload", {
         method: "POST",
         body: formData,
       });
-
+  
       if (!response.ok) throw new Error("Upload failed");
-
+  
       const data = await response.json();
       setFeatureModel(data.feature_model);
       setMwp(data.mwp);
-      setSelectedFeatures(new Set());
+      setWp(data.wp);
+      console.log(data.wp);
+      // Initialize selectedFeatures with MWP instead of empty set
+      setSelectedFeatures(new Set(data.mwp[0]));
       setError(null);
       setValidationDetails([]);
       setIsValid(true);
       setShowDashboard(false);
+  
+      // Verify the initial MWP configuration
+      // await verifyConfiguration(new Set(data.mwp));
     } catch (err) {
       setError("Error uploading file: " + err.message);
+      showErrorPopup('An unexpected error occurred.');
       setFeatureModel(null);
       setMwp(null);
     } finally {
@@ -116,7 +130,7 @@ const FeatureModelVisualizer = () => {
   };
 
   // Error Display Component
-  const ErrorDisplay = () => {
+  const ErrorDisplay = ({error}) => {
     if (!error) return null;
     
     return (
@@ -149,6 +163,8 @@ const FeatureModelVisualizer = () => {
   // Main Render
   return (
     <>
+          {ErrorPopupComponent}
+
       <LoadingOverlay />
       <AnimatePresence mode="wait">
         {!showDashboard ? (
@@ -164,6 +180,7 @@ const FeatureModelVisualizer = () => {
             handleFileUpload={handleFileUpload}
             featureModel={featureModel}
             mwp={mwp}
+            wp={wp}
             selectedFeatures={selectedFeatures}
             handleFeatureSelect={handleFeatureSelect}
             isFeatureDisabled={isFeatureDisabled}
