@@ -222,14 +222,14 @@ const PropositionalLogicView = () => {
               {getIcon(type)}
               {type.replace(/[()]/g, '')}
             </h3>
-            <div className="space-y-2 ml-7">
+            <div className="gap-3 grid grid-cols-3 ml-7">
               {formulas.map((formula, idx) => (
                 <motion.div
                   key={`${type}-${idx}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
-                  className="bg-gray-50 p-2 rounded"
+                  className="bg-gray-50 p-2 rounded-xl "
                 >
                   <code className="text-sm">{formula}</code>
                 </motion.div>
