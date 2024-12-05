@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { FileUp, GitBranch, Workflow, AlertTriangle } from "lucide-react";
+import { FileUp, GitBranch, Workflow, AlertTriangle, Settings } from "lucide-react";
 import ConfigurationStatus from "./ConfigurationStatus";
 import FeatureModelFlow from "./FeatureModelFlow";
 import FeatureTree from "./FeatureTree";
 import PropositionalLogicView from "./PropositionalLogicView";
 import Sidebar from "./Sidebar";
 import StatsOverview from "./StatOverview";
+import ConstraintsConfigurator from "./ConstraintsConfigurator";
 
 const Dashboard = ({
   selectedTab,
@@ -108,6 +109,21 @@ const Dashboard = ({
                 )}
               </div>
             )}
+
+            {selectedTab =="constraints" && (
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Settings className="w-6 h-6 text-blue-600" />
+                  Constraints Configurator
+                </h2>
+                
+                  <ConstraintsConfigurator>
+
+                  </ConstraintsConfigurator>
+                
+              </div>
+            )  
+            }
           </motion.div>
         </AnimatePresence>
       </div>

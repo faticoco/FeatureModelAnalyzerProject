@@ -5,7 +5,7 @@ import { Layout, Binary, GitBranch, Settings, Workflow } from "lucide-react";
 const SidebarItem = ({ icon: Icon, label, id, selectedTab, setSelectedTab }) => (
   <motion.button
     whileHover={{ x: 4 }}
-    onClick={() => setSelectedTab(id)}
+    onClick={() =>{console.log("setting selected to: " + id) ; setSelectedTab(id)}}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
       selectedTab === id ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'
     }`}
@@ -28,6 +28,8 @@ const Sidebar = ({ selectedTab, setSelectedTab }) => (
         <SidebarItem icon={Binary} label="Logic View" id="logic" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         <SidebarItem icon={GitBranch} label="Feature Tree" id="tree" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
         <SidebarItem icon={Workflow} label="Visual Model" id="visual" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+        <SidebarItem icon={Settings} label="Constraints" id="constraints" selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
+
       </nav>
     </div>
   </motion.div>

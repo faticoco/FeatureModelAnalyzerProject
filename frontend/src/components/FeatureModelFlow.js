@@ -107,27 +107,29 @@ const FeatureModelFlow = ({ featureModel }) => {
     }
   }, [featureModel]);
 
-  const FeatureNode = ({ data }) => (
-    <div className="relative">
-      <Handle
-        type="target"
-        position={Position.Top}
-        style={{ visibility: "hidden" }}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        style={{ visibility: "hidden" }}
-      />
-      <div
-        className={`
-          px-4 py-2 rounded border-2
-          ${data.mandatory ? "border-blue-600" : "border-gray-400"}
-          bg-white min-w-[120px] text-center
-          relative
-        `}
-      >
-        {/* Circle at the top */}
+  // Modify just the FeatureNode component:
+const FeatureNode = ({ data }) => (
+  <div className="relative">
+    <Handle
+      type="target"
+      position={Position.Top}
+      style={{ visibility: "hidden" }}
+    />
+    <Handle
+      type="source"
+      position={Position.Bottom}
+      style={{ visibility: "hidden" }}
+    />
+    <div
+      className={`
+        px-4 py-2 rounded border-2
+        ${data.mandatory ? "border-blue-600" : "border-gray-400"}
+        bg-white min-w-[120px] text-center
+        relative
+      `}
+    >
+      {/* Circle at the top - only show if not root node */}
+      {featureModel[data.label]?.parent && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <div
             className={`
@@ -136,15 +138,16 @@ const FeatureModelFlow = ({ featureModel }) => {
             `}
           />
         </div>
-        <span>{data.label}</span>
-      </div>
-      {data.groupType && (
-        <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-purple-600">
-          {data.groupType.toUpperCase()}
-        </div>
       )}
+      <span>{data.label}</span>
     </div>
-  );
+    {data.groupType && (
+      <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-purple-600">
+        {data.groupType.toUpperCase()}
+      </div>
+    )}
+  </div>
+);
 
   const nodeTypes = {
     featureNode: FeatureNode,
