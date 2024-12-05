@@ -21,6 +21,7 @@ const FeatureModelVisualizer = () => {
   const [selectedTab, setSelectedTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState(null);
+  const [constraints,setConstraints] =useState(null);
 
   // File Upload Handler
   const handleFileUpload = async (event) => {
@@ -46,6 +47,8 @@ const FeatureModelVisualizer = () => {
   
       const data = await response.json();
       setFeatureModel(data.feature_model);
+      console.log(data.constraints)
+      setConstraints(data.constraints)
       setMwp(data.mwp);
       setWp(data.wp);
       console.log(data.wp);
@@ -236,6 +239,7 @@ const handleFeatureSelect = async (featureName) => {
             error={error}
             uploadedFileName={uploadedFileName}
             setUploadedFileName={setUploadedFileName}
+            constraints={constraints}
           />
         )}
       </AnimatePresence>

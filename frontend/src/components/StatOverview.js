@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Box, Check, Hash, CheckCircle } from "lucide-react";
 import StatCard from "./StatCard";
 
-const StatsOverview = ({ featureModel, mwp, wp }) => (
+const StatsOverview = ({ featureModel, mwp, wp ,constraints}) => (
+  
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
       <StatCard
@@ -21,7 +22,7 @@ const StatsOverview = ({ featureModel, mwp, wp }) => (
       <StatCard
         icon={CheckCircle}
         label="Constraints"
-        value={featureModel?.constraints?.length || 0}
+        value={constraints?.length || 0}
         color="purple"
       />
       <StatCard

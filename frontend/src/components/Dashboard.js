@@ -21,7 +21,8 @@ const Dashboard = ({
   isValid,
   validationDetails,
   uploadedFileName, 
-  setUploadedFileName
+  setUploadedFileName,
+  constraints
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
@@ -58,7 +59,7 @@ const Dashboard = ({
             className="space-y-6"
           >
             {selectedTab === "overview" && 
-              <StatsOverview featureModel={featureModel} mwp={mwp} wp={wp} />}
+              <StatsOverview featureModel={featureModel} mwp={mwp} wp={wp} constraints={constraints} />}
             {selectedTab === "logic" && 
               <PropositionalLogicView featureModel={featureModel} />}
             {selectedTab === "tree" && (

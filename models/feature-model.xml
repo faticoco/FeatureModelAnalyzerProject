@@ -29,9 +29,9 @@
         </feature>
     </feature>
     <constraints>
-        <!-- <constraint>
+        <constraint>
             <englishStatement>The Location feature is required to filter the catalog by location.</englishStatement>
-        </constraint> -->
+        </constraint>
         <constraint>
             <booleanExpression>Payment -> Location</booleanExpression>
         </constraint>
