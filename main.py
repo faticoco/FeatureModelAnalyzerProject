@@ -241,6 +241,8 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
                 'expression': eng_stmt.text,
                 'is_english': True
             })
+        
+        
     
     # Start parsing from root
     root_feature = root.find('feature')
@@ -251,6 +253,7 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
         translate_to_logic(parsed_model.feature_model)
     
     return parsed_model
+
 
 def get_available_features(parsed_model: ParsedModel) -> List[str]:
     return list(parsed_model.feature_model.keys())
@@ -446,7 +449,7 @@ async def get_wp():
 def setup_hf_auth():
    login('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')
 
-def query_llama_api(prompt):
+def query_llm_api(prompt):
     """
     Sends a prompt to LLaMA via Hugging Face API and returns the response.
     """
@@ -486,7 +489,60 @@ def query_llama_api(prompt):
     except Exception as e:
         print(f"Error: {e}")
         return "Error: An error occurred while making the request."
-    
+class ConstraintUpdate(BaseModel):
+    english_statement: str
+    boolean_translation: str
+@app.post("/update_constraint")
+async def update_constraint(update: ConstraintUpdate):
+    try:
+        session_id = "default_session"
+        parsed_model = model_storage.get_model(session_id)
+        
+        if not parsed_model:
+            raise HTTPException(
+                status_code=400, 
+                detail="No feature model uploaded"
+            )
+        
+        # Find and update matching English constraint
+        found = False
+        for constraint in parsed_model.constraints:
+            if (constraint['is_english'] and 
+                constraint['expression'] == update.english_statement):
+                constraint['is_english'] = False
+                constraint['expression'] = update.boolean_translation
+                found = True
+                break
+        
+        if not found:
+            raise HTTPException(
+                status_code=404,
+                detail="English constraint not found"
+            )
+        
+        # Recalculate products with updated constraints
+        wp = find_wp(parsed_model)
+        mwp = find_mwp(wp)
+        
+        # Store updated model
+        model_storage.store_model(session_id, parsed_model)
+        
+        return {
+            "message": "Constraint updated successfully",
+            "updated_constraint": update.boolean_translation,
+            "feature_model": parsed_model.feature_model,
+            "constraints": parsed_model.constraints,
+            "wp": wp,
+            "mwp": mwp
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error updating constraint: {str(e)}"
+        )
+
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -618,8 +674,6 @@ async def verify_configuration(selection: FeatureSelection):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-class EnglishConstraint(BaseModel):
-    constraint: str
 
 @app.post("/convert_constraint")
 async def convert_english_to_boolean(request: dict):
@@ -652,7 +706,7 @@ Example conversions:
 Convert this constraint: {request['constraint']}"""
 
         print(prompt)
-        response = query_llama_api(prompt)
+        response = query_llm_api(prompt)
         print(response)
         # valid_tokens = set(features + ['∧', '∨', '¬', '→', '(', ')', ' '])
         # if not all(token in valid_tokens for token in response.split()):
