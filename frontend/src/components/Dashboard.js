@@ -1,29 +1,28 @@
-// components/Dashboard.jsx
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { FileUp, GitBranch, Workflow } from "lucide-react";
-import Sidebar from "./Sidebar";
-import StatsOverview from "./StatOverview";
-import PropositionalLogicView from "./PropositionalLogicView";
-import FeatureTree from "./FeatureTree";
 import ConfigurationStatus from "./ConfigurationStatus";
 import FeatureModelFlow from "./FeatureModelFlow";
+import FeatureTree from "./FeatureTree";
+import PropositionalLogicView from "./PropositionalLogicView";
+import Sidebar from "./Sidebar";
+import StatsOverview from "./StatOverview";
 
-const Dashboard = ({ 
-  selectedTab, 
-  setSelectedTab, 
-  handleFileUpload, 
+const Dashboard = ({
+  selectedTab,
+  setSelectedTab,
+  handleFileUpload,
   featureModel,
   mwp,
   selectedFeatures,
   handleFeatureSelect,
   isFeatureDisabled,
   isValid,
-  validationDetails 
+  validationDetails,
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
       <Sidebar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-      
+
       <div className="ml-64 flex-1 p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -37,7 +36,12 @@ const Dashboard = ({
           >
             <FileUp className="w-4 h-4" />
             <span>Upload New</span>
-            <input type="file" onChange={handleFileUpload} className="hidden" accept=".xml" />
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              className="hidden"
+              accept=".xml"
+            />
           </motion.label>
         </div>
 
@@ -51,10 +55,12 @@ const Dashboard = ({
             transition={{ duration: 0.2 }}
             className="space-y-6"
           >
-            {selectedTab === "overview" && 
-              <StatsOverview featureModel={featureModel} mwp={mwp} />}
-            {selectedTab === "logic" && 
-              <PropositionalLogicView featureModel={featureModel} />}
+            {selectedTab === "overview" && (
+              <StatsOverview featureModel={featureModel} mwp={mwp} />
+            )}
+            {selectedTab === "logic" && (
+              <PropositionalLogicView featureModel={featureModel} />
+            )}
             {selectedTab === "tree" && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -62,7 +68,7 @@ const Dashboard = ({
                   Feature Tree
                 </h2>
                 {featureModel && (
-                  <FeatureTree 
+                  <FeatureTree
                     featureName={Object.keys(featureModel)[0]}
                     featureModel={featureModel}
                     selectedFeatures={selectedFeatures}
@@ -72,15 +78,21 @@ const Dashboard = ({
                 )}
               </div>
             )}
-            {selectedTab === "config" && 
-              <ConfigurationStatus isValid={isValid} validationDetails={validationDetails} />}
+            {selectedTab === "config" && (
+              <ConfigurationStatus
+                isValid={isValid}
+                validationDetails={validationDetails}
+              />
+            )}
             {selectedTab === "visual" && (
               <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <Workflow className="w-6 h-6 text-blue-600" />
                   Visual Model
                 </h2>
-                {featureModel && <FeatureModelFlow featureModel={featureModel} />}
+                {featureModel && (
+                  <FeatureModelFlow featureModel={featureModel} />
+                )}
               </div>
             )}
           </motion.div>
