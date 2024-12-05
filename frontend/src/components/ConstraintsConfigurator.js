@@ -3,7 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Edit2, ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const EditConstraintPopup = ({ constraint, onClose, availableVariables }) => {
+const EditConstraintPopup = ({ constraint, onClose, availableVariables, setMwp,
+    setWp,
+    setConstraints,
+    setFeatureModel, }) => {
     const [editedText, setEditedText] = useState("");
     const [loading, setLoading] = useState(false)
 
@@ -11,12 +14,49 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables }) => {
         setEditedText(prev => prev + ' ' + value);
     };
 
+    const updateConstraint = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch('http://localhost:8000/update_constraint', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    english_statement: constraint.expression,
+                    boolean_translation: editedText
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail);
+            }
+
+            const data = await response.json();
+
+            // Update all states with new data
+            setConstraints(data.constraints);
+            setFeatureModel(data.feature_model);
+            setWp(data.wp);
+            setMwp(data.mwp);
+            
+
+            onClose();
+        } catch (error) {
+            console.error('Error updating constraint:', error);
+            // Here you might want to show an error message to the user
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // Example usage in your frontend code
     const convertConstraint = async (constraintText) => {
         try {
-            
+
             setLoading(true)
-            
+
             const response = await fetch('http://localhost:8000/convert_constraint', {
                 method: 'POST',
                 headers: {
@@ -136,10 +176,24 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables }) => {
                         Cancel
                     </button>
                     <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        onClick={updateConstraint}
+                        disabled={loading}
+                        className={`
+        px-4 py-2 rounded-md
+        ${loading
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700'}
+        text-white
+    `}
                     >
-                        Save
+                        {loading ? (
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Saving...
+                            </div>
+                        ) : (
+                            'Save'
+                        )}
                     </button>
                 </div>
             </motion.div>
@@ -147,17 +201,24 @@ const EditConstraintPopup = ({ constraint, onClose, availableVariables }) => {
     );
 };
 
-const ConstraintsConfigurator = ({ constraints, availableVariables }) => {
+const ConstraintsConfigurator = ({ constraints, availableVariables, setMwp,
+    setWp,
+    setConstraints,
+    setFeatureModel }) => {
     const [editableConstraints, setEditableConstraints] = useState(constraints || []);
     const [editingConstraint, setEditingConstraint] = useState(null);
+
+    useEffect(() => {
+        if (constraints) {
+            setEditableConstraints(constraints);
+        }
+    }, [constraints])
 
     const englishConstraints = editableConstraints.filter(c => c.is_english);
     const logicalConstraints = editableConstraints.filter(c => !c.is_english);
 
     return (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Constraints</h2>
-
+        <div className="">
             {/* Logical Constraints Section */}
             <div className="mb-6">
                 <h3 className="text-sm font-semibold text-start text-gray-700 mb-3">Logical Expressions</h3>
@@ -209,6 +270,10 @@ const ConstraintsConfigurator = ({ constraints, availableVariables }) => {
                     constraint={editingConstraint}
                     onClose={() => setEditingConstraint(null)}
                     availableVariables={availableVariables}
+                    setMwp={setMwp}
+                    setWp={setWp}
+                    setConstraints={setConstraints}
+                    setFeatureModel={setFeatureModel}
                 />
             )}
         </div>

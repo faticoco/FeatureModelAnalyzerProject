@@ -21,7 +21,11 @@ const Dashboard = ({
   validationDetails,
   uploadedFileName, 
   constraints,
-  availableVariables
+  availableVariables,
+  setMwp,
+            setWp,
+            setConstraints,
+            setFeatureModel,
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
@@ -115,7 +119,12 @@ const Dashboard = ({
                   Constraints Configurator
                 </h2>
                 
-                  <ConstraintsConfigurator constraints={constraints} availableVariables={availableVariables}>
+                  <ConstraintsConfigurator constraints={constraints} availableVariables={availableVariables}
+                  setMwp={setMwp}
+                  setWp={setWp}
+                  setConstraints={setConstraints}
+                  setFeatureModel={setFeatureModel}
+                  >
 
                   </ConstraintsConfigurator>
                 

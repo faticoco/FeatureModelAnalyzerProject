@@ -257,6 +257,10 @@ const FeatureModelVisualizer = () => {
             setUploadedFileName={setUploadedFileName}
             constraints={constraints}
             availableVariables={availableVariables}
+            setMwp={setMwp}
+            setWp={setWp}
+            setConstraints={setConstraints}
+            setFeatureModel={setFeatureModel}
           />
         )}
       </AnimatePresence>
