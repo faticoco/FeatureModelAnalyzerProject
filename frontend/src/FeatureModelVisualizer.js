@@ -54,14 +54,14 @@ const FeatureModelVisualizer = () => {
       setWp(data.wp);
       console.log(data.wp);
       // Initialize selectedFeatures with MWP instead of empty set
+      const availableVar = await getAvailableVariables();
+      setAvailableVariables(availableVar);
       if (data.mwp.length > 0) {
         setSelectedFeatures(new Set(data.mwp[0]));
         setError(null);
         setValidationDetails([]);
         setIsValid(true);
         setShowDashboard(false);
-        const availableVar = await getAvailableVariables();
-        setAvailableVariables(availableVar);
       } else {
         showErrorPopup('Warning: the logical rules in the file appear to be invalid. No possible product can be made. If you still want to try, click "Extract Feature Model".');
         // setFeatureModel(null);
