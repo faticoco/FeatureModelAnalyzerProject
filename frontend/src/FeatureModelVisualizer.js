@@ -57,7 +57,7 @@ const FeatureModelVisualizer = () => {
       setIsValid(true);
       setShowDashboard(false);
       } else {
-        showErrorPopup('The file configuration is invalid');
+        showErrorPopup('Warning: the logical rules in the file appear to be invalid. No possible product can be made. If you still want to try, click "Extract Feature Model".');
         // setFeatureModel(null);
         // setMwp(null);
       }
@@ -217,6 +217,7 @@ const handleFeatureSelect = async (featureName) => {
             featureModel={featureModel}
             setShowDashboard={setShowDashboard}
             uploadedFileName={uploadedFileName}
+            
           />
         ) : (
           <Dashboard
@@ -226,6 +227,7 @@ const handleFeatureSelect = async (featureName) => {
             featureModel={featureModel}
             mwp={mwp}
             wp={wp}
+            setShowDashboard={setShowDashboard}
             selectedFeatures={selectedFeatures}
             handleFeatureSelect={handleFeatureSelect}
             isFeatureDisabled={isFeatureDisabled}
@@ -233,6 +235,7 @@ const handleFeatureSelect = async (featureName) => {
             validationDetails={validationDetails}
             error={error}
             uploadedFileName={uploadedFileName}
+            setUploadedFileName={setUploadedFileName}
           />
         )}
       </AnimatePresence>
