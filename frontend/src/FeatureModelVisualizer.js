@@ -20,6 +20,7 @@ const FeatureModelVisualizer = () => {
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedTab, setSelectedTab] = useState("overview");
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
 
   // File Upload Handler
   const handleFileUpload = async (event) => {
@@ -30,6 +31,8 @@ const FeatureModelVisualizer = () => {
     }
   
     setIsLoading(true);
+    setUploadedFileName(file.name);
+
     const formData = new FormData();
     formData.append("file", file);
   
@@ -172,6 +175,7 @@ const FeatureModelVisualizer = () => {
             handleFileUpload={handleFileUpload}
             featureModel={featureModel}
             setShowDashboard={setShowDashboard}
+            uploadedFileName={uploadedFileName}
           />
         ) : (
           <Dashboard
