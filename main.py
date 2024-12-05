@@ -224,7 +224,9 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
     # Parse constraints
     for constraint in root.findall('.//constraint'):
         bool_expr = constraint.find('booleanExpression')
+        print(bool_expr)
         bool_expr = preprocess_expression(bool_expr.text) if bool_expr is not None else None
+        print(bool_expr)
         eng_stmt = constraint.find('englishStatement')
         
         

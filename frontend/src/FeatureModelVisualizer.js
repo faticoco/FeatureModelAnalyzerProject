@@ -54,7 +54,7 @@ const FeatureModelVisualizer = () => {
       setShowDashboard(false);
   
       // Verify the initial MWP configuration
-      await verifyConfiguration(new Set(data.mwp));
+      // await verifyConfiguration(new Set(data.mwp));
     } catch (err) {
       setError("Error uploading file: " + err.message);
       showErrorPopup('An unexpected error occurred.');
