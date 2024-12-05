@@ -11,6 +11,10 @@ from collections import deque
 from pysat.solvers import Solver
 from itertools import combinations
 from sympy import Symbol, to_cnf
+from huggingface_hub import login
+from transformers import pipeline
+from huggingface_hub import InferenceClient
+
 app = FastAPI()
 
 app.add_middleware(
@@ -174,7 +178,19 @@ def validate_parentheses(expr):
             stack.pop()
     return len(stack) == 0
 
-
+def preprocess_expression(expression: str) -> str:
+    replacements = {
+        'and': '∧',
+        'or': '∨',
+        'not': '¬',
+        'implies': '->'
+    }
+    
+    for word, symbol in replacements.items():
+        expression = expression.replace(word, symbol)
+    
+    print(expression)
+    return expression
 
 def parse_feature_xml(xml_content: str) -> ParsedModel:
     parsed_model = ParsedModel()
@@ -209,11 +225,15 @@ def parse_feature_xml(xml_content: str) -> ParsedModel:
     # Parse constraints
     for constraint in root.findall('.//constraint'):
         bool_expr = constraint.find('booleanExpression')
+        print(bool_expr)
+        bool_expr = preprocess_expression(bool_expr.text) if bool_expr is not None else None
+        print(bool_expr)
         eng_stmt = constraint.find('englishStatement')
+        
         
         if bool_expr is not None:
             parsed_model.constraints.append({
-                'expression': bool_expr.text,
+                'expression': bool_expr,
                 'is_english': False
             })
         elif eng_stmt is not None:
@@ -418,11 +438,7 @@ async def get_wp():
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
 
-from huggingface_hub import login
-from transformers import pipeline
-from huggingface_hub import InferenceClient
 def setup_hf_auth():
    login('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')
 
@@ -466,6 +482,7 @@ def query_llama_api(prompt):
     except Exception as e:
         print(f"Error: {e}")
         return "Error: An error occurred while making the request."
+    
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     try:
@@ -600,7 +617,6 @@ async def verify_configuration(selection: FeatureSelection):
 class EnglishConstraint(BaseModel):
     constraint: str
 
-@app.post("/convert_constraint")
 @app.post("/convert_constraint")
 async def convert_english_to_boolean(request: dict):
     try:

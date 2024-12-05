@@ -1,17 +1,16 @@
-// components/Dashboard.jsx
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { FileUp, GitBranch, Workflow } from "lucide-react";
-import Sidebar from "./Sidebar";
-import StatsOverview from "./StatOverview";
-import PropositionalLogicView from "./PropositionalLogicView";
-import FeatureTree from "./FeatureTree";
 import ConfigurationStatus from "./ConfigurationStatus";
 import FeatureModelFlow from "./FeatureModelFlow";
+import FeatureTree from "./FeatureTree";
+import PropositionalLogicView from "./PropositionalLogicView";
+import Sidebar from "./Sidebar";
+import StatsOverview from "./StatOverview";
 
-const Dashboard = ({ 
-  selectedTab, 
-  setSelectedTab, 
-  handleFileUpload, 
+const Dashboard = ({
+  selectedTab,
+  setSelectedTab,
+  handleFileUpload,
   featureModel,
   mwp,
   wp,
@@ -19,12 +18,12 @@ const Dashboard = ({
   handleFeatureSelect,
   isFeatureDisabled,
   isValid,
-  validationDetails 
+  validationDetails,
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
       <Sidebar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-      
+
       <div className="ml-64 flex-1 p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -38,7 +37,12 @@ const Dashboard = ({
           >
             <FileUp className="w-4 h-4" />
             <span>Upload New</span>
-            <input type="file" onChange={handleFileUpload} className="hidden" accept=".xml" />
+            <input
+              type="file"
+              onChange={handleFileUpload}
+              className="hidden"
+              accept=".xml"
+            />
           </motion.label>
         </div>
 
@@ -83,7 +87,9 @@ const Dashboard = ({
                   <Workflow className="w-6 h-6 text-blue-600" />
                   Visual Model
                 </h2>
-                {featureModel && <FeatureModelFlow featureModel={featureModel} />}
+                {featureModel && (
+                  <FeatureModelFlow featureModel={featureModel} />
+                )}
               </div>
             )}
           </motion.div>

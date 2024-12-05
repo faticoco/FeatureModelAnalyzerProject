@@ -29,13 +29,11 @@
         </feature>
     </feature>
     <constraints>
-        <constraint>
+        <!-- <constraint>
             <englishStatement>The Location feature is required to filter the catalog by location.</englishStatement>
-        </constraint>
-        <!-- example of boolean
+        </constraint> -->
         <constraint>
-        <booleanExpression>Payment implies Location</booleanExpression>
+            <booleanExpression>Payment -> Location</booleanExpression>
         </constraint>
-        -->
     </constraints>
 </featureModel>
