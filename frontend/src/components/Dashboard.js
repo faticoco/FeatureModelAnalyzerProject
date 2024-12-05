@@ -15,16 +15,17 @@ const Dashboard = ({
   mwp,
   wp,
   selectedFeatures,
+  setShowDashboard,
   handleFeatureSelect,
   isFeatureDisabled,
   isValid,
   validationDetails,
-  uploadedFileName
+  uploadedFileName, 
+  setUploadedFileName
 }) => (
   <div className="min-h-screen bg-gray-50">
     <div className="flex">
       <Sidebar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-
       <div className="ml-64 flex-1 p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -37,16 +38,11 @@ const Dashboard = ({
             <motion.label
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => {window.location.reload()}}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg cursor-pointer hover:bg-blue-700 transition-all"
             >
               <FileUp className="w-4 h-4" />
               <span>Upload New</span>
-              <input
-                type="file"
-                onChange={handleFileUpload}
-                className="hidden"
-                accept=".xml"
-              />
             </motion.label>
           </div>
         </div>

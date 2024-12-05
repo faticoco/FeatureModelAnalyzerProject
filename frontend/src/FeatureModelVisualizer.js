@@ -182,6 +182,7 @@ const FeatureModelVisualizer = () => {
             featureModel={featureModel}
             setShowDashboard={setShowDashboard}
             uploadedFileName={uploadedFileName}
+            
           />
         ) : (
           <Dashboard
@@ -191,6 +192,7 @@ const FeatureModelVisualizer = () => {
             featureModel={featureModel}
             mwp={mwp}
             wp={wp}
+            setShowDashboard={setShowDashboard}
             selectedFeatures={selectedFeatures}
             handleFeatureSelect={handleFeatureSelect}
             isFeatureDisabled={isFeatureDisabled}
@@ -198,6 +200,7 @@ const FeatureModelVisualizer = () => {
             validationDetails={validationDetails}
             error={error}
             uploadedFileName={uploadedFileName}
+            setUploadedFileName={setUploadedFileName}
           />
         )}
       </AnimatePresence>
